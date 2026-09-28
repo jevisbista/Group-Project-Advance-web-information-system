@@ -1,0 +1,30 @@
+# XAMPP Apache 2.4 local example. Add to conf/extra/httpd-vhosts.conf.
+# Preserve other virtual hosts; ensure httpd.conf includes that file.
+# Add 127.0.0.1 clubconnect.local to the Windows hosts file.
+# These Directory rules are GLOBAL so localhost/Clubconnect also remains protected.
+<Directory "C:/xampp/htdocs/Clubconnect">
+    AllowOverride None
+    Require all denied
+</Directory>
+
+<Directory "C:/xampp/htdocs/Clubconnect/public">
+    Options -Indexes
+    AllowOverride None
+    DirectoryIndex index.php
+    Require local
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+<VirtualHost *:80>
+    ServerName clubconnect.local
+    DocumentRoot "C:/xampp/htdocs/Clubconnect/public"
+    ErrorLog "logs/clubconnect-error.log"
+    CustomLog "logs/clubconnect-access.log" combined
+</VirtualHost>
+
+# HTTP and Require local are deliberately for this computer only.
+# Hosted deployments need a separately configured HTTPS virtual host/certificate,
+# public-only DocumentRoot, protected parent directory and https_required => true.
+# Validate with C:/xampp/apache/bin/httpd.exe -t before restarting Apache.

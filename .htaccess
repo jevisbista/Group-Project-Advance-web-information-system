@@ -1,0 +1,2 @@
+# Defence in depth if the project is accidentally reached under XAMPP htdocs.
+Require all denied

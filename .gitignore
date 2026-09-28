@@ -1,0 +1,11 @@
+/config/config.local.php
+/Clubconnect.zip
+/storage/*
+!/storage/.gitkeep
+/backups/
+/node_modules/
+/test-results/
+*.log
+.env
+.DS_Store
+Thumbs.db
