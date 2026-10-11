@@ -13,6 +13,7 @@ if (!config('demo_mode')) {
 $pdo = db();
 $today = club_now();
 $password = 'ClubConnectDemo!2026';
+$samPassword = '123456789sam';
 $added = ['members' => 0, 'committee' => 0, 'events' => 0, 'registrations' => 0];
 $manifestPath = STORAGE_DIR . '/demo-seed-' . hash('sha256', config('db')['name']) . '.json';
 $manifestLock = fopen($manifestPath . '.lock', 'c+');
@@ -45,7 +46,7 @@ try {
     $members = [];
     foreach ([
         ['alex', 'Alex', 'Morgan', 'CCDEMO001', 'alex.member@example.test', 'active'],
-        ['sam', 'Sam', 'Rivera', 'CCDEMO002', 'sam.committee@example.test', 'active'],
+        ['sam', 'Sam', 'Rivera', 'CCDEMO002', 'sam@gmail.com', 'active'],
         ['taylor', 'Taylor', 'Chen', 'CCDEMO003', 'taylor.expired@example.test', 'active'],
         ['inactive', 'Jordan', 'Lee', 'CCDEMO004', 'inactive.member@example.test', 'inactive'],
     ] as [$key, $first, $last, $student, $email, $status]) {
@@ -60,7 +61,8 @@ try {
             continue;
         }
         $stmt = $pdo->prepare("INSERT INTO members (first_name,last_name,student_id,email,phone,password_hash,membership_type,join_date,status) VALUES (?,?,?,?,NULL,?,'standard',?,?)");
-        $stmt->execute([$first, $last, $student, $email, password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]), $today->modify('-1 month')->format('Y-m-d'), $status]);
+        $memberPassword = $key === 'sam' ? $samPassword : $password;
+        $stmt->execute([$first, $last, $student, $email, password_hash($memberPassword, PASSWORD_BCRYPT, ['cost' => 12]), $today->modify('-1 month')->format('Y-m-d'), $status]);
         $members[$key] = (int) $pdo->lastInsertId(); $added['members']++;
         $manifest['members'][$key] = $members[$key];
     }
@@ -138,5 +140,8 @@ try {
 echo "Demo seed complete. Added: " . json_encode($added, JSON_THROW_ON_ERROR) . PHP_EOL;
 echo "Existing matching demo records, passwords, dates and registrations were preserved. No unrelated data was removed.\n";
 echo "Keep the private storage/demo-seed-*.json manifest with this demo database and include it in backups.\n";
-echo "New demo account password: $password\n";
-echo "Member: alex.member@example.test\nCurrent committee: sam.committee@example.test\nExpired committee (member only): taylor.expired@example.test\nInactive (login rejected): inactive.member@example.test\n";
+echo "Defaults for newly created demo accounts only; existing logins are not reset:\n";
+echo "Member: alex.member@example.test | Password: $password\n";
+echo "Current committee: sam@gmail.com | Password: $samPassword\n";
+echo "Expired committee (member only): taylor.expired@example.test | Password: $password\n";
+echo "Inactive (login rejected): inactive.member@example.test | Password: $password\n";

@@ -1,0 +1,19 @@
+# XAMPP Apache 2.4: include this file INSIDE the existing localhost VirtualHost.
+# Adjust the paths and URL prefix together if installing in another folder.
+# Keep other virtual hosts and the project's deny-all root .htaccess in place.
+RedirectMatch 302 ^/Clubconnect$ /Clubconnect/
+Alias "/Clubconnect/" "C:/xampp/htdocs/Clubconnect/public/"
+
+<Directory "C:/xampp/htdocs/Clubconnect/public">
+    Options -Indexes
+    AllowOverride None
+    DirectoryIndex index.php
+    Require local
+    SetEnv CLUBCONNECT_BASE_PATH /Clubconnect
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+# Validate with C:/xampp/apache/bin/httpd.exe -t, then restart Apache.
+# Apache and MySQL must be running; a separate PHP server is unnecessary here.

@@ -48,7 +48,7 @@ Run PowerShell commands from `C:\xampp\htdocs\Clubconnect`. The examples assume 
 
    Edit `config/config.local.php`: set `db.password` to the account password and paste the generated 64-character secret into `app_key`. Keep `db.host` as `127.0.0.1`, `db.name` as `clubconnect`, and `db.user` as `clubconnect_app` for the setup above. This file is ignored by Git. Do not share its contents.
 
-   Use `base_path => ''` with the recommended document root. `timezone => 'Australia/Sydney'` determines event dates and committee terms. Keep `environment => 'local'` and `https_required => false` only for HTTP development on loopback. Hosted use requires HTTPS and `https_required => true`. `contact_email` remains clearly labelled as an example while `contact_is_example` is true; set both appropriately before real use. Keep `demo_mode` true while presenting sample data.
+   The template reads `base_path` from `CLUBCONNECT_BASE_PATH`, defaulting to an empty string. The Apache localhost configuration below supplies `/Clubconnect`; the PHP development server and optional `clubconnect.local` host use the empty default. If updating an older local configuration, set `'base_path' => getenv('CLUBCONNECT_BASE_PATH') ?: ''`. `timezone => 'Australia/Sydney'` determines event dates and committee terms. Keep `environment => 'local'` and `https_required => false` only for HTTP development on loopback. Hosted use requires HTTPS and `https_required => true`. `contact_email` remains clearly labelled as an example while `contact_is_example` is true; set both appropriately before real use. Keep `demo_mode` true while presenting sample data.
 
 5. Ensure PHP's process account can write to `storage/` and its configured PHP session directory. Keep write access limited to the operator and web service account. Generate fictional demonstration records:
 
@@ -60,13 +60,15 @@ Run PowerShell commands from `C:\xampp\htdocs\Clubconnect`. The examples assume 
 
 6. Serve **only `public/`**, using either route below.
 
-### XAMPP Apache
+### XAMPP Apache at localhost/Clubconnect
 
-Review [config/apache-vhost.conf.example](config/apache-vhost.conf.example). Add its directory rules and virtual host to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`; retain other existing virtual hosts. Confirm `httpd.conf` includes that file. The project-wide deny rule in the example is deliberately outside the virtual host so the existing `localhost/Clubconnect/` alias cannot expose private files. Add this hosts-file entry as an administrator:
+Review [config/apache-localhost.conf.example](config/apache-localhost.conf.example). Inside the existing `localhost` `<VirtualHost *:80>` block in `C:\xampp\apache\conf\extra\httpd-vhosts.conf`, add this include while retaining its existing settings and other virtual hosts:
 
-```text
-127.0.0.1 clubconnect.local
+```apache
+Include "C:/xampp/htdocs/Clubconnect/config/apache-localhost.conf.example"
 ```
+
+Confirm `httpd.conf` includes `conf/extra/httpd-vhosts.conf`. The new include belongs inside the localhost virtual host. It maps `/Clubconnect/` to **only `public/`**, supplies the `/Clubconnect` base path, restricts access to this computer and redirects `/Clubconnect` to `/Clubconnect/`. Private project files remain denied. No hosts-file entry is needed for `localhost`.
 
 Check the configuration before restarting Apache:
 
@@ -74,7 +76,9 @@ Check the configuration before restarting Apache:
 & 'C:\xampp\apache\bin\httpd.exe' -t
 ```
 
-Restart Apache through XAMPP and visit **http://clubconnect.local/**. The supplied example is loopback-only HTTP for local development. Retain XAMPP's existing default virtual host if other local applications depend on it. Root and public `.htaccess` files provide additional protection where Apache allows them; they do not replace a correctly restricted document root. Verify private URLs return 403/404 using [the deployment checks](docs/testing.md).
+Restart Apache through XAMPP and visit **http://localhost/Clubconnect/**. Log in at **http://localhost/Clubconnect/dashboard.php**. After restarting Windows, start **Apache** and **MySQL** in XAMPP to use these addresses again. This Apache option does not require the port 8000 launcher. Verify private URLs return 403/404 using [the deployment checks](docs/testing.md).
+
+For an optional separate hostname, [config/apache-vhost.conf.example](config/apache-vhost.conf.example) supplies global directory rules and a `clubconnect.local` virtual host. Preserve existing virtual hosts, add `127.0.0.1 clubconnect.local` to the Windows hosts file as an administrator, validate with `httpd.exe -t`, then restart Apache and visit **http://clubconnect.local/**. Keep `CLUBCONNECT_BASE_PATH` scoped to the localhost virtual host so this separate hostname retains an empty base path. Both Apache examples use local HTTP; hosted use requires a separately configured HTTPS virtual host. Root and public `.htaccess` files provide additional protection where Apache allows them; they do not replace the Apache directory rules.
 
 ### Local PHP development server
 
@@ -96,14 +100,14 @@ Stop the terminal server with Ctrl+C when finished. This server is for local dev
 
 ## Demo accounts
 
-The common demo password is **`ClubConnectDemo!2026`**. These credentials are for fictional local demonstration data only. A seeder rerun does not restore a changed password.
+These ClubConnect demo credentials apply to accounts created by the current seeder in a fresh database. Updating the source or rerunning the seeder preserves existing accounts and does not change their emails or passwords.
 
-| Email | Demonstration role |
-| --- | --- |
-| `alex.member@example.test` | Active ordinary member |
-| `sam.committee@example.test` | Active member with a current committee term |
-| `taylor.expired@example.test` | Active member with an expired committee term; no event-management permission |
-| `inactive.member@example.test` | Inactive account; login/member actions are denied |
+| Email | Demo password | Demonstration role |
+| --- | --- | --- |
+| `alex.member@example.test` | `ClubConnectDemo!2026` | Active ordinary member |
+| `sam@gmail.com` | `123456789sam` | Active member with a current committee term |
+| `taylor.expired@example.test` | `ClubConnectDemo!2026` | Active member with an expired committee term; no event-management permission |
+| `inactive.member@example.test` | `ClubConnectDemo!2026` | Inactive account; login/member actions are denied |
 
 Use unique fictional details for your own registration demo. The password policy is at least 12 characters, at most 72 UTF-8 bytes, no null bytes, with no forced mixture of capitals, digits or symbols. Spaces and long passphrases are welcome within that byte limit. Bcrypt hashing uses cost 12; submitted passwords are never put back into the form. Registration does not verify an email address.
 
@@ -141,7 +145,7 @@ storage/                Private throttle, audit logs and PHP error diagnostics
 3. Log in. Open a future event with places available, confirm the RSVP, refresh, and show the single registration on the dashboard.
 4. Start cancellation from the dashboard, review the confirmation, submit it, then show the released place. Rejoin to demonstrate reuse of the existing record.
 5. Update your own profile, refresh, then log out and back in to show persistence.
-6. Log in as `sam.committee@example.test`. Add a future event, edit it, inspect participants, and use the seeded past event to demonstrate attendance management. Explain why capacity cannot fall below occupied places.
+6. Log in as `sam@gmail.com` with `123456789sam` for a newly seeded demo. If using an existing database, use that account's current credentials. Add a future event, edit it, inspect participants, and use the seeded past event to demonstrate attendance management. Explain why capacity cannot fall below occupied places.
 7. Log in as the expired committee account to show the member experience without management controls. Explain that the inactive sample cannot log in.
 8. Show Contact's `mailto:` link and FAQ. It opens an email application; the site does not send a message.
 
@@ -149,6 +153,7 @@ storage/                Private throttle, audit logs and PHP error diagnostics
 
 | Symptom | Check |
 | --- | --- |
+| Browser cannot reach `localhost/Clubconnect/` | Start Apache and MySQL in XAMPP; confirm the localhost virtual host includes `config/apache-localhost.conf.example`, validate Apache configuration and restart Apache after changes |
 | Setup/unavailable message | Private `storage/php-error.log`, database service, imported schema and local configuration; avoid exposing diagnostics in the browser |
 | `could not find driver` | Enable `pdo_mysql` in the PHP configuration actually used, then restart Apache |
 | Browser `ERR_CONNECTION_REFUSED` on port 8000 | Run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1` from the project folder; the PHP server must be running |
@@ -157,8 +162,8 @@ storage/                Private throttle, audit logs and PHP error diagnostics
 | Login cannot continue | Valid 64-character `app_key`, writable private storage and session directory; wait for the 15-minute throttle window if the attempt limit was reached |
 | Expired form / session | Refresh to receive a current CSRF token; cookies must be enabled; sessions expire after 30 minutes idle |
 | HTTP rejected | Local HTTP requires a loopback request and local environment; use HTTPS for hosted or remote access |
-| Broken navigation/assets | `public/` must be the document root and `base_path` must match the mounted path |
+| Broken navigation/assets | Serve only `public/`; the localhost alias must supply `CLUBCONNECT_BASE_PATH /Clubconnect`, while a site mounted at `/` uses an empty base path |
 | No current demo events | Dates are generated only when new rows are seeded; use a separate fresh demo database rather than changing existing history |
 | Contact email does not deliver | The initial address is an example; configure a real club mailbox and update the example flag |
 
-See [operations](docs/operations.md) for weekly backups and a separate-database restore, [security and privacy](docs/security-privacy.md) for safeguards and risks, and [testing](docs/testing.md) for evidence and repeatable checks. Publishing this source repository does not deploy the application. Local credentials, runtime storage and the local ZIP archive are excluded from Git.
+See [operations](docs/operations.md) for weekly backups and a separate-database restore, [security and privacy](docs/security-privacy.md) for safeguards and risks, and [testing](docs/testing.md) for evidence and repeatable checks. Publishing this source repository does not deploy the application. Private local configuration, runtime storage and the local ZIP archive are excluded from Git.

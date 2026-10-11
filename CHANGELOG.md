@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased - committee demo login
+
+- Changed Sam's newly seeded ClubConnect demo login to `sam@gmail.com` with password `123456789sam`; the other three demo accounts retain `ClubConnectDemo!2026`.
+- Updated the demo account table and walkthrough. Existing seeded accounts retain their current emails and passwords when the source is updated or the seeder is rerun.
+
+## Unreleased - localhost Apache access
+
+- Added an Apache configuration example that serves `http://localhost/Clubconnect/` from the public directory and keeps private project files protected.
+- Read the application base path from a scoped Apache environment setting so the localhost alias, separate hostname and port 8000 development server can use the same local configuration.
+- Documented Apache and MySQL startup after reboot and retained the separate PHP launcher instructions.
+
 ## Unreleased - repository handover
 
 - Prepared the complete ClubConnect source, public assets, database schema, setup scripts and documentation for the group project repository.

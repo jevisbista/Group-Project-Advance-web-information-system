@@ -40,6 +40,23 @@ Verification was completed on **28 September 2026**. The main browser log was la
 | Backup and separate-database restore rehearsal | Pending | Instructions in operations; no completed restore claimed |
 | Hosted HTTPS deployment | Pending / outside local build | Local HTTP was exercised; no hosted deployment or TLS/certificate validation claimed |
 
+## Sam demo login update verification
+
+On 11 October 2026, fresh seeding was checked in the separate `clubconnect_test_sam_20261011_cf4844` database. Sam's requested email and password verified against the stored hash, while the other three demo accounts retained their original defaults. The existing `scripts/test-seed.php` preservation check passed, and Sam kept the new login and active committee term after repeated seeding. The main database was not used for these seed checks.
+
+The seed script passed PHP syntax validation, and both updated browser scripts passed `node --check`. The full browser acceptance suites were not rerun for the fixture changes. Sam's updated local account was separately verified through the Apache login page and committee event form, followed by logout.
+
+## Localhost Apache alias verification
+
+On 11 October 2026, the localhost virtual host was configured to include `config/apache-localhost.conf.example`, serving `http://localhost/Clubconnect/` from `public/`. The prior Apache and private PHP configurations were backed up under ignored `storage/` before the change.
+
+- Apache configuration validation and syntax checks for both PHP configuration files passed. Apache accepted its native Windows graceful reload event.
+- Chrome 155.0.8059.39 loaded all eight public routes, including the expected signed-out RSVP redirect. Links, form actions and asset paths retained the `/Clubconnect/` prefix; nine distinct referenced assets returned HTTP 200.
+- The fictional member account completed login and logout with JavaScript disabled. Redirects stayed under the new prefix, and the HttpOnly session cookie used `/Clubconnect/`.
+- Inter loaded, Home had no horizontal overflow at 375px and 1200px, and no JavaScript page errors occurred.
+- The bare `/Clubconnect` path redirected to `/Clubconnect/`. Private configuration, schema, scripts, storage, application source, Git metadata, environment and ZIP paths returned 403/404; directory listing and non-aliased case variants remained blocked.
+- The existing port 8000 preview still returned HTTP 200 with root-relative asset paths. These checks covered the hosting-path change; broader data-mutation tests were not rerun.
+
 ## Visual refresh verification
 
 After the requested banner, typography and photography changes on 28 September 2026:

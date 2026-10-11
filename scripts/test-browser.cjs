@@ -20,8 +20,8 @@ async function form(client, endpoint, values, csrf = true) {
     const html = await (await client.get(base + '/' + endpoint)).text();
     return client.post(base + '/' + endpoint, { form: { ...(csrf ? { csrf_token: token(html) } : {}), ...values } });
 }
-async function login(client, email) {
-    const response = await form(client, 'dashboard.php', { action: 'login', email, password: 'ClubConnectDemo!2026' });
+async function login(client, email, password = 'ClubConnectDemo!2026') {
+    const response = await form(client, 'dashboard.php', { action: 'login', email, password });
     check((await response.text()).includes('Keep your details up to date'), 'login succeeds for ' + email);
 }
 
@@ -54,7 +54,7 @@ async function eventChecks() {
     // Leave the demo account ready for the same acceptance walkthrough on another run.
     await form(guest, 'dashboard.php', { action: 'cancel', cancel_event_id: eventId, confirm_cancel: '1' });
     html = await (await guest.get(base + '/events.php?participants=' + eventId)).text();
-    check(!html.includes('sam.committee@example.test'), 'member cannot obtain participant email list via URL');
+    check(!html.includes('sam@gmail.com'), 'member cannot obtain participant email list via URL');
     response = await guest.post(base + '/events.php', { form: { action: 'save_event', csrf_token: memberToken, committee_id: '1' } });
     check(response.status() === 403, 'member cannot forge committee event action');
     html = await (await guest.get(base + '/events.php?q=NO_MATCH_' + Date.now())).text();
@@ -68,7 +68,7 @@ async function eventChecks() {
     response = await expired.post(base + '/events.php', { form: { action: 'save_event', csrf_token: expiredToken } });
     check(response.status() === 403, 'expired committee cannot create events via HTTP');
     const committee = await request.newContext();
-    await login(committee, 'sam.committee@example.test');
+    await login(committee, 'sam@gmail.com', '123456789sam');
     const eventData = { action: 'save_event', event_id: '', event_name: 'Browser workshop ' + Date.now(), description: '<script>alert("test")</script> Fictional acceptance event.', event_date: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10), start_time: '13:00', end_time: '14:30', location: 'Browser test room', capacity: '5', created_by: '2147483647' };
     const csrf = token(await (await committee.get(base + '/events.php?add=1')).text());
     response = await committee.post(base + '/events.php', { form: { ...eventData, csrf_token: csrf }, maxRedirects: 0 });
@@ -79,7 +79,7 @@ async function eventChecks() {
     response = await committee.post(base + '/events.php', { form: { ...eventData, event_id: createdId, capacity: '6', csrf_token: csrf } });
     check((await response.text()).includes('Event details updated'), 'current committee can edit event');
     html = await (await committee.get(base + '/events.php?participants=' + eventId)).text();
-    check(html.includes('sam.committee@example.test') && !html.includes('CCDEMO002'), 'committee receives limited participant data without student IDs');
+    check(html.includes('sam@gmail.com') && !html.includes('CCDEMO002'), 'committee receives limited participant data without student IDs');
     response = await committee.post(base + '/events.php', { form: { ...eventData, csrf_token: 'wrong' } });
     check(response.status() === 403, 'committee event action rejects invalid CSRF');
     for (const ctx of [guest, committee, expired]) { await ctx.dispose(); }
@@ -159,7 +159,7 @@ async function httpChecks() {
     check(html.includes('Hello, Jordan.') && html.includes('Standard membership'), 'registered account logs in with standard membership');
     check(!html.includes('You are a current committee member'), 'public registration cannot grant committee access');
     response = await visitor.get(base + '/dashboard.php?member_id=2');
-    check(!(await response.text()).includes('sam.committee@example.test'), 'changing member_id cannot expose another profile');
+    check(!(await response.text()).includes('sam@gmail.com'), 'changing member_id cannot expose another profile');
     response = await form(visitor, 'dashboard.php', { action: 'profile', ...profile, first_name: '<script>alert(1)</script>', member_id: '2', membership_type: 'life' });
     html = await response.text();
     check(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && !html.includes('<script>alert(1)</script>'), 'profile stores text safely and encodes HTML output');

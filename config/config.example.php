@@ -4,7 +4,7 @@ declare(strict_types=1);
 // Copy to config.local.php. Never commit real credentials or the application key.
 return [
     'environment' => 'local',
-    'base_path' => '', // Empty when public/ is the document root; no trailing slash.
+    'base_path' => getenv('CLUBCONNECT_BASE_PATH') ?: '', // Apache alias prefix, otherwise public/ is the document root.
     'timezone' => 'Australia/Sydney',
     'contact_email' => 'hello@clubconnect.example',
     'contact_is_example' => true,

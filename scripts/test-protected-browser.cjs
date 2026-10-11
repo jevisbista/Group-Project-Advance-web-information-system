@@ -17,10 +17,10 @@ async function clickNavigate(page, locator) {
     assert.equal(await locator.count(), 1, 'Expected one navigation control');
     await Promise.all([page.waitForNavigation(), locator.click()]);
 }
-async function login(page, email) {
+async function login(page, email, password = 'ClubConnectDemo!2026') {
     await page.goto(base + '/dashboard.php');
     await page.getByLabel('Email address', { exact: true }).fill(email);
-    await page.getByLabel('Password', { exact: true }).fill('ClubConnectDemo!2026');
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await clickNavigate(page, page.getByRole('button', { name: 'Log in', exact: true }));
     check(await page.getByRole('heading', { name: 'Keep your details up to date' }).isVisible(), email + ' signs in with JavaScript disabled');
 }
@@ -46,7 +46,7 @@ async function login(page, email) {
         await clickNavigate(page, page.getByRole('button', { name: 'Yes, cancel my place' }));
         check(await page.getByText('Your registration has been cancelled.', { exact: false }).isVisible(), name + ' no-JS confirmed cancellation succeeds');
         await clickNavigate(page, page.getByRole('button', { name: 'Log out', exact: true }));
-        await login(page, 'sam.committee@example.test');
+        await login(page, 'sam@gmail.com', '123456789sam');
         await page.goto(base + '/events.php?add=1');
         await capture(page, name + '-committee-editor');
         await page.getByLabel('Event name', { exact: true }).fill('No-JS workshop ' + name + '-' + Date.now());
